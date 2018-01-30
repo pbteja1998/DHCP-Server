@@ -2,6 +2,8 @@
 import sys
 import time
 import socket
+from uuid import getnode as get_mac
+
 
 class dhcpClient:
 	''' client requests methods for a connection to dhcp Server '''
@@ -83,11 +85,15 @@ class dhcpClient:
 
 if __name__ == "__main__":
 	
+	
 	if len(sys.argv) == 3:
-		if sys.argv[0] == "dhcpClient.py" and sys.argv[1] == "-m":
+		if sys.argv[0] == "./dhcpClient.py" and sys.argv[1] == "-m":
 			client = dhcpClient(sys.argv[2])
 			client.clientDiscover()
 		else:
 			print "Give proper number of argument ( eg: ./client.py -m MAC-ADDRESS )"
 	else:
-		print "Give proper number of argument ( eg: ./client.py -m MAC-ADDRESS )"
+		mac = get_mac()
+		mac = ':'.join(("%012X" % mac)[i:i+2] for i in range(0, 12, 2))
+		client = dhcpClient(mac)
+		client.clientDiscover()

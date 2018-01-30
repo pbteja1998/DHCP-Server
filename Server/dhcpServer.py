@@ -4,6 +4,10 @@ import socket
 import operator
 from thread import *
 
+# from uuid import getnode as get_mac
+# mac = get_mac()
+# mac = ':'.join(("%012X" % mac)[i:i+2] for i in range(0, 12, 2))
+
 class dhcpServer:
 	''' functionalities of dhcp Server '''
 	def __init__(self):
@@ -125,6 +129,9 @@ class dhcpServer:
 							currentIpParts[j] = 0
 					currentIp = '.'.join(str(part) for part in currentIpParts)
 
+			# Subnet
+			self.Subnet["unallocated"] = 32 - maxHosts
+
 			# Network Address
 			networkAddress = self.Ips["unallocated"]
 			self.netAddress["unallocated"] = networkAddress[0][0]
@@ -153,27 +160,24 @@ class dhcpServer:
 		except KeyError:
 			lab = "unallocated"
 
-		if lab == "unallocated":
-			ipToAssign = self.Ips[lab][0][0]
+		i = 0
+		while i < len(self.Ips[lab]) and self.Ips[lab][i][1] == 1:
+			i += 1
+		print "fdyhrtgh", i
+		if i >= len(self.Ips[lab]):
+			fullStatus = 1
+			print "subnet is full"
+			conn.send(str(fullStatus))
+			return self.dhcpDiscover(conn)
 		else:
-			i = 0
-			while i < len(self.Ips[lab]) and self.Ips[lab][i][1] == 1:
-				i += 1
-			print "fdyhrtgh", i
-			if i >= len(self.Ips[lab]):
-				fullStatus = 1
-				print "subnet is full"
-				conn.send(str(fullStatus))
-				return self.dhcpDiscover(conn)
-			else:
-				fullStatus = 0
-				conn.send(str(fullStatus))
-			
+			fullStatus = 0
+			conn.send(str(fullStatus))
+		
 
-			ipToAssign = self.Ips[lab][i][0]
-			self.Ips[lab][i][1] = 1
-			subnet = self.Subnet[lab]
-			ipToAssign = '/'.join([str(ipToAssign), str(subnet)])
+		ipToAssign = self.Ips[lab][i][0]
+		self.Ips[lab][i][1] = 1
+		subnet = self.Subnet[lab]
+		ipToAssign = '/'.join([str(ipToAssign), str(subnet)])
 		# offer assigned Ip to the requested client
 		self.dhcpOffer(ipToAssign, lab, conn)
 
@@ -242,7 +246,7 @@ class dhcpServer:
 if __name__ == "__main__":
 	
 	server = dhcpServer()
-
+	
 	while True:
 		conn, addr = server.socket.accept()
 		start_new_thread(server.dhcpDiscover,(conn,))	
